@@ -8,6 +8,44 @@ export default function Balances() {
   const { data: session } = useSession();
   const [data, setData] = useState<any>(null);
   const [fromDate, setFromDate] = useState<string>("");
+  const [recording, setRecording] = useState<number | null>(null);
+
+  const handleRecordPayment = async (suggestionIndex: number, suggestion: any) => {
+    setRecording(suggestionIndex);
+    try {
+      const res = await fetch("/api/settlements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groupId: 1,
+          payerMemberId: suggestion.fromMemberId,
+          payeeMemberId: suggestion.toMemberId,
+          amount: suggestion.amount,
+          settledAt: new Date().toISOString().slice(0, 10),
+          notes: `Recorded settlement from ${suggestion.fromName} to ${suggestion.toName}`,
+        }),
+      });
+      if (res.ok) {
+        // Refresh balances
+        const userId = (session?.user as any)?.id;
+        if (userId) {
+          const url = new URL("/api/balances", window.location.origin);
+          url.searchParams.set("groupId", "1");
+          url.searchParams.set("memberId", userId);
+          if (fromDate) url.searchParams.set("fromDate", fromDate);
+          const fresh = await fetch(url.toString()).then((r) => r.json());
+          setData(fresh);
+        }
+      } else {
+        alert("Failed to record payment.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong while recording payment.");
+    } finally {
+      setRecording(null);
+    }
+  };
 
   useEffect(() => {
     const userId = (session?.user as any)?.id;
@@ -151,8 +189,20 @@ export default function Balances() {
                     </span>
                   </div>
                   {s.fromMemberId === myBalance?.memberId && (
-                    <button className="btn-primary" style={{ width: "100%", padding: "8px", fontSize: "12px" }}>
-                      💸 Record Payment
+                    <button
+                      className="btn-primary"
+                      disabled={recording !== null}
+                      onClick={() => handleRecordPayment(i, s)}
+                      style={{ width: "100%", padding: "8px", fontSize: "12px" }}
+                    >
+                      {recording === i ? (
+                        <>
+                          <div className="spinner" style={{ width: "12px", height: "12px", borderWidth: "2px", marginRight: "6px" }} />
+                          Recording…
+                        </>
+                      ) : (
+                        "💸 Record Payment"
+                      )}
                     </button>
                   )}
                 </div>

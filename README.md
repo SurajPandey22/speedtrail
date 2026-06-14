@@ -304,7 +304,6 @@ The entire CSV is parsed into a staging session. No data touches the production 
 
 - **Single group only**: The app is hardcoded to `group_id = 1`. Multi-group support would require routing changes.
 - **No real-time updates**: The UI doesn't use WebSockets; refresh the page to see changes made by other users.
-- **Manual settlement recording**: Clicking "Record Payment" on the Balances page is a UI stub — it will be wired to the `/api/settlements` endpoint in a future update.
 - **No email verification**: Signup is validated by domain (`@flat.com`) but no email OTP is sent.
 
 ---
